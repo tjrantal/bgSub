@@ -4,3 +4,6 @@ height 100
 leg hori 45
 leg depth 33 back, 40 front
 back rest depth 33
+
+Try LBP for bg model
+http://www.ee.oulu.fi/~topiolli/?section=cpplibs
