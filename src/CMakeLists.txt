@@ -5,18 +5,23 @@
 
 file (GLOB SOURCE_FILES "*.h" "*.cpp")
 
+# Collect sources into the variable SIMPLE_FUNCTION_SOURCES  
+file (GLOB lbp_FUNCTION_SOURCES
+      "lbp/*.h"
+      "lbp/*.cpp")
 	  
 source_group("" FILES ${SOURCE_FILES})
+source_group("lbp" FILES ${lbp_FUNCTION_SOURCES})
 
 #ADD dependent libraries include and link directories
 INCLUDE_DIRECTORIES( ${OpenCV_DIR}/install/include )
 
 if (WIN32)
 	message("Executable WIN32")
-	add_executable (bgSub ${SOURCE_FILES})
+	add_executable (bgSub ${SOURCE_FILES} ${lbp_FUNCTION_SOURCES})
 endif(WIN32)
 if(UNIX)
-	add_executable (bgSub ${SOURCE_FILES})
+	add_executable (bgSub ${SOURCE_FILES} ${lbp_FUNCTION_SOURCES})
 endif(UNIX)
 
 #message("LIBAVFORMAT " ${LIBAVFORMAT_LIBRARIES})

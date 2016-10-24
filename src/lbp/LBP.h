@@ -12,6 +12,7 @@ Bicubic interpolation copied and ported from imageJ imageProcessor.
 #ifndef _LBP_H
 #define _LBP_H
 
+
 struct Neighbourhood{
 	int length;
 	double** coordinates;
@@ -30,8 +31,9 @@ struct Neighbourhood{
 
 struct Mapping{
 	int length;
-	char* map;
-	Mapping(char* map, int length){
+	unsigned char* map;
+	
+	Mapping(unsigned char* map, int length){
 		this->map=map;
 		this->length=length;
 	}
@@ -48,7 +50,8 @@ class LBP{
 		
 		double* cutPoints;
 		//Methods
-		char lbpBlock(double** data,int* coordinates);
+		unsigned char lbpBlock(double** data,int* coordinates);
+		unsigned char lbpBlock(unsigned char* data, int* coordinates);
 
 		/*Mapping to rotation invariant uniform patterns: riu2 in getmapping.m*/	
 		Mapping* getMapping(int samples);
@@ -59,6 +62,7 @@ class LBP{
 		
 		/*Cubic interpolation from ImageJ*/
 		double getBicubicInterpolatedPixel(double x0, double y0, double** data);
+		double getBicubicInterpolatedPixel(double x0, double y0, unsigned char* data);
 		double cubic(double x);
 	
 	public:
@@ -79,6 +83,7 @@ class LBP{
 		
 		/*Return the LBP image*/
 		char** getLBP(double** data, int width, int height);
+		unsigned char* getLBP(unsigned char* data, int width, int height);
 
 		
 };

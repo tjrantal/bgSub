@@ -2,6 +2,7 @@
 	#include "LBP.h"
 #endif
 #include <cmath>
+
 //Constructors
 LBP::LBP(int samples, int radius, int threshold){
 	this->samples=samples;
@@ -27,7 +28,7 @@ LBP::~LBP(){
 /*Mapping to rotation invariant uniform patterns: riu2 in getmapping.m*/	
 Mapping* LBP::getMapping(int samples){
 	int bitMaskLength = (int) (std::pow(2.0,(double) samples));
-	char* table = new char[bitMaskLength];
+	unsigned char* table = new unsigned char[bitMaskLength];
 	int j;
 	int sampleBitMask = 0;
 	for (int i = 0;i<samples;++i){
@@ -48,7 +49,7 @@ Mapping* LBP::getMapping(int samples){
 				table[i]+= (i>>k) & 1;
 			}
 		}else{
-			table[i] = (char) (samples+1);
+			table[i] = (unsigned char) (samples+1);
 		}
 	}
 	return new Mapping(table,bitMaskLength);
@@ -66,6 +67,71 @@ Neighbourhood* LBP::getCircularNeighbourhood(int radius,int samples){
 	}
 	return new Neighbourhood(samplingCoordinates,samples);
 }
+
+/*Functionsin unsigned char format to suit OpenCV*/
+
+unsigned char* LBP::getLBP(unsigned char* data, int width, int height) {
+	this->width = width;
+	this->height = height;
+	unsigned char* lbpSlice = new unsigned char[width*height];
+	
+	/*Calculate the lbp*/
+	int* coordinates = new int[2];
+	for (int i = 0 + radius; i<width - radius; ++i) {
+		for (int j = 0 + radius; j<height - radius; ++j) {
+			coordinates[0] = i;
+			coordinates[1] = j;
+			//System.out.println("source x "+coordinates[0]+" y "+coordinates[1]);
+			lbpSlice[i+j*width] = lbpBlock(data, coordinates);
+		}
+	}
+
+	return lbpSlice;
+}
+
+unsigned char LBP::lbpBlock(unsigned char* data, int* coordinates) {
+	int lbpValue = 0;
+	double x = (double)coordinates[0];
+	double y = (double)coordinates[1];
+	for (int i = 0; i<neighbourhood->length; ++i) {
+		lbpValue = data[coordinates[0]+coordinates[1]*width] > getBicubicInterpolatedPixel(x + neighbourhood->coordinates[i][0], y + neighbourhood->coordinates[i][1], data) + threshold ? lbpValue | (1 << i) : lbpValue & ~(1 << i);
+	}
+	return mapping->map[lbpValue];
+}
+
+
+double LBP::getBicubicInterpolatedPixel(double x0, double y0, unsigned char* data) {
+	int u0 = (int)std::floor(x0);	//use floor to handle negative coordinates too
+	int v0 = (int)std::floor(y0);
+	if (u0<1 || u0>width - 3 || v0< 1 || v0>height - 3) {
+		/*If cannot do bicubic use bilinear interpolation http://en.wikipedia.org/wiki/Bilinear_interpolation*/
+		if ((u0 == 0 || u0 < width - 1) && (v0 == 0 || v0 < height - 1)) {
+			double x = (x0 - (double)u0);
+			double y = (y0 - (double)v0);
+			return ((double)data[u0+v0*width]) * (1 - x)*(1 - y) 	/*f(0,0)(1-x)(1-y)*/
+				+ ((double)data[u0 + 1+v0*width]) * (1 - y)*x	/*f(1,0)x(1-y)*/
+				+ ((double)data[u0+(v0 + 1)*width]) * (1 - x)*y	/*f(0,1)(1-x)y*/
+				+ ((double)data[u0 + 1+ (v0 + 1)*width]) * x*y;	/*f(1,1)xy*/
+		}
+		return 0; //Return zero for points outside the interpolable area
+	}
+	else {
+		//Bicubic interpolation
+		double q = 0;
+		for (int j = 0; j < 4; ++j) {
+			int v = v0 - 1 + j;
+			double p = 0;
+			for (int i = 0; i < 4; ++i) {
+				int u = u0 - 1 + i;
+				p = p + ((double) data[u+v*width]) * cubic(x0 - u);
+			}
+			q = q + p * cubic(y0 - v);
+		}
+		return q;
+	}
+}
+
+
 
 char** LBP::getLBP(double** data, int width, int height){
 	this->width = width;
@@ -90,7 +156,7 @@ char** LBP::getLBP(double** data, int width, int height){
 	return lbpSlice;
 }
 
-char LBP::lbpBlock(double** data,int* coordinates){
+unsigned char LBP::lbpBlock(double** data,int* coordinates){
 	int lbpValue = 0;
 	double x = (double) coordinates[0];
 	double y = (double) coordinates[1];
