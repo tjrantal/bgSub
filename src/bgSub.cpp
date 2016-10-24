@@ -48,7 +48,8 @@ int main(int argc, char* argv[]){
 
 		
 		//Get matrix size
-		LBP lbp(16, 2, 3);
+		//LBP lbp(16, 2, 3);
+		LBP lbp(atoi(argv[4]), atoi(argv[5]),atoi(argv[6]));
 		uchar* lbpData;
 		while(vc.read(frame)){
 			resize(frame, scaled, Size(), 0.4, 0.4, INTER_CUBIC);	//Scale size down
@@ -71,9 +72,10 @@ int main(int argc, char* argv[]){
 			*/
 			
 			cvtColor(scaled, gScale, CV_BGR2GRAY);
+			lbpData = lbp.getLBP(gScale.ptr<uchar>(), scaled.cols, scaled.rows);
 			//Filter gScale
 			GaussianBlur(gScale, gScale, Size(7, 7), 1.5, 1.5);
-			lbpData = lbp.getLBP(gScale.ptr<uchar>(), scaled.cols, scaled.rows);
+			
 			//Take canny edges
 			Canny(gScale, gScale, 0, 30, 3);
 						
